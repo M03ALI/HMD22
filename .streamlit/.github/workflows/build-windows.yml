@@ -1,0 +1,58 @@
+name: Build Windows App
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Show repository files (for debugging path issues)
+        run: dir
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements-desktop.txt
+
+      - name: Fetch plotly.js (so charts work offline)
+        run: curl -L -o plotly.min.js https://cdn.plot.ly/plotly-2.35.2.min.js
+
+      - name: Build the executable
+        run: pyinstaller --clean --noconfirm hospitalapp.spec
+
+      - name: Install Inno Setup
+        run: choco install innosetup --no-progress -y
+
+      - name: Build the installer
+        run: '& "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer.iss'
+
+      - name: Upload the standalone app
+        uses: actions/upload-artifact@v4
+        with:
+          name: HDM-Dashboard-App
+          path: dist/HDM-Dashboard.exe
+
+      - name: Upload the installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: HDM-Dashboard-Setup
+          path: installer_out/HDM-Dashboard-Setup.exe
+
+      - name: Attach to release (tagged builds only)
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/HDM-Dashboard.exe
+            installer_out/HDM-Dashboard-Setup.exe
