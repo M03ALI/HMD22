@@ -1,0 +1,12 @@
+streamlit
+pandas
+numpy
+plotly
+matplotlib
+reportlab
+Pillow
+python-pptx
+openpyxl
+streamlit-sortables
+pywebview
+pyinstaller
